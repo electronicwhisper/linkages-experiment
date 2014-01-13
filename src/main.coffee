@@ -37,26 +37,21 @@ class DistanceConstraint
   points: -> [@p1, @p2]
   error: ->
     q = math.quadrance(@p1, @p2)
-    dq = q - @quadrance
-    return dq*dq
+    e = Math.sqrt(q) - Math.sqrt(@quadrance)
+    return e*e
 
 class AngleConstraint
   constructor: (@p1, @p2, @angle) ->
   points: -> [@p1, @p2]
   error: ->
-    a = math.angle(@p1, @p2)
-    da = a - @angle
-    da *= 10000
-    return da*da
+    cos = Math.cos(@angle)
+    sin = Math.sin(@angle)
+    u = (@p2.x - @p1.x)*cos + (@p2.y - @p1.y)*sin
+    projectionx = @p1.x + u*cos
+    projectiony = @p1.y + u*sin
 
-class SpreadConstraint
-  constructor: (@p1, @p2, @spread) ->
-  points: -> [@p1, @p2]
-  error: ->
-    s = math.spread(@p1, @p2)
-    ds = s - @spread
-    ds *= 1000000
-    return ds*ds
+    q = math.quadrance(@p2, new Point(projectionx, projectiony))
+    return q*4
 
 model = {
   points: []
@@ -117,12 +112,8 @@ render = ->
   for constraint in model.constraints
     if constraint instanceof DistanceConstraint
       drawLine(constraint.p1, constraint.p2, "blue")
-    if constraint instanceof SpreadConstraint
+    if constraint instanceof AngleConstraint
       drawLine(constraint.p1, constraint.p2, "red")
-      # r = 40
-      # a1 = 0
-      # a2 = constraint.angle
-      # drawArc(constraint.p1, r, a1, a2)
 
 
 # =============================================================================
@@ -167,7 +158,8 @@ pointerUp = (e) ->
 
 
 idle = ->
-  # enforceConstraints()
+  enforceConstraints()
+  render()
 
 
 key "d", ->
@@ -186,11 +178,9 @@ key "a", ->
   p1 = uistate.lastPoints[0]
   p2 = uistate.lastPoints[1]
 
-  # angle = math.angle(p1, p2)
-  spread = math.spread(p1, p2)
+  angle = math.angle(p1, p2)
 
-  # constraint = new AngleConstraint(p1, p2, angle)
-  constraint = new SpreadConstraint(p1, p2, spread)
+  constraint = new AngleConstraint(p1, p2, angle)
   model.constraints.push(constraint)
 
   render()
@@ -217,27 +207,17 @@ math.angle = (p1, p2) ->
   dy = p2.y - p1.y
   return Math.atan2(dy, dx)
 
-math.spread = (p1, p2) ->
-  dy = p2.y - p1.y
-  return dy*dy / math.quadrance(p1, p2)
-
 math.normalize = (p) ->
   d = Math.sqrt(p.x*p.x + p.y*p.y)
   return new Point(p.x / d, p.y / d)
-
-# math.spread = (c, p1, p2) ->
-#   n = (p1.y-c.y)*(p2.x-c.x) - (p2.y-c.y)*(p1.x-c.x)
-#   n = n*n
-#   d = math.quadrance(p1, c) * math.quadrance(p2, c)
-#   return n / d
 
 # =============================================================================
 # Constraints
 # =============================================================================
 
 enforceConstraints = ->
-  epsilon = 1e3
-  stepSize = 1e-6
+  epsilon = 1e-2
+  stepSize = 1
 
   fixedPoints = []
   for point in model.points
@@ -258,6 +238,7 @@ enforceConstraints = ->
         moves.push({
           points: relevantPoints
           derivatives: derivatives
+          error: e
         })
 
     if moves.length == 0
@@ -268,13 +249,14 @@ enforceConstraints = ->
       for point, i in move.points
         derivative = move.derivatives[i]
         d = math.normalize(derivative)
-        point.x -= d.x
-        point.y -= d.y
+        step = Math.min(stepSize, Math.sqrt(move.error)*0.1)
+        point.x -= d.x * step
+        point.y -= d.y * step
 
 
 
 gradient = (constraint, points) ->
-  delta = 1e-8
+  delta = 1e-10
 
   derivatives = []
 
