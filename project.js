@@ -76,14 +76,13 @@
     };
 
     AngleConstraint.prototype.error = function() {
-      var cos, projectionx, projectiony, q, sin, u;
-      cos = Math.cos(this.angle);
-      sin = Math.sin(this.angle);
-      u = (this.p2.x - this.p1.x) * cos + (this.p2.y - this.p1.y) * sin;
-      projectionx = this.p1.x + u * cos;
-      projectiony = this.p1.y + u * sin;
-      q = math.quadrance(this.p2, new Point(projectionx, projectiony));
-      return q;
+      var cos, dx, dy, rdy, sin;
+      dx = this.p2.x - this.p1.x;
+      dy = this.p2.y - this.p1.y;
+      cos = Math.cos(-this.angle);
+      sin = Math.sin(-this.angle);
+      rdy = sin * dx + cos * dy;
+      return rdy * rdy;
     };
 
     return AngleConstraint;

@@ -44,14 +44,16 @@ class AngleConstraint
   constructor: (@p1, @p2, @angle) ->
   points: -> [@p1, @p2]
   error: ->
-    cos = Math.cos(@angle)
-    sin = Math.sin(@angle)
-    u = (@p2.x - @p1.x)*cos + (@p2.y - @p1.y)*sin
-    projectionx = @p1.x + u*cos
-    projectiony = @p1.y + u*sin
+    dx = @p2.x - @p1.x
+    dy = @p2.y - @p1.y
 
-    q = math.quadrance(@p2, new Point(projectionx, projectiony))
-    return q
+    cos = Math.cos(-@angle)
+    sin = Math.sin(-@angle)
+
+    rdy = sin*dx + cos*dy
+
+    return rdy*rdy
+
 
 
 model = {
