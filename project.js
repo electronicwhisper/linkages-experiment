@@ -96,7 +96,9 @@
 
   uistate = {
     movingPoint: null,
-    lastPoints: []
+    lastPoints: [],
+    pointerX: 0,
+    pointerY: 0
   };
 
   clear = function() {
@@ -192,28 +194,26 @@
     }
     uistate.movingPoint = foundPoint;
     if (uistate.lastPoints[0] !== foundPoint) {
-      uistate.lastPoints.unshift(foundPoint);
+      return uistate.lastPoints.unshift(foundPoint);
     }
-    return render();
   };
 
   pointerMove = function(e) {
-    if (uistate.movingPoint) {
-      uistate.movingPoint.x = e.clientX;
-      uistate.movingPoint.y = e.clientY;
-      enforceConstraints();
-    }
-    return render();
+    uistate.pointerX = e.clientX;
+    return uistate.pointerY = e.clientY;
   };
 
   pointerUp = function(e) {
     if (uistate.movingPoint) {
-      uistate.movingPoint = null;
+      return uistate.movingPoint = null;
     }
-    return render();
   };
 
   idle = function() {
+    if (uistate.movingPoint) {
+      uistate.movingPoint.x = uistate.pointerX;
+      uistate.movingPoint.y = uistate.pointerY;
+    }
     enforceConstraints();
     return render();
   };

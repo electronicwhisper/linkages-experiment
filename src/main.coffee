@@ -69,6 +69,8 @@ model = {
 uistate = {
   movingPoint: null
   lastPoints: []
+  pointerX: 0
+  pointerY: 0
 }
 
 
@@ -142,25 +144,21 @@ pointerDown = (e) ->
   if uistate.lastPoints[0] != foundPoint
     uistate.lastPoints.unshift(foundPoint)
 
-  render()
 
 pointerMove = (e) ->
-  if uistate.movingPoint
-    uistate.movingPoint.x = e.clientX
-    uistate.movingPoint.y = e.clientY
+  uistate.pointerX = e.clientX
+  uistate.pointerY = e.clientY
 
-    enforceConstraints()
-
-  render()
 
 pointerUp = (e) ->
   if uistate.movingPoint
     uistate.movingPoint = null
 
-  render()
-
 
 idle = ->
+  if uistate.movingPoint
+    uistate.movingPoint.x = uistate.pointerX
+    uistate.movingPoint.y = uistate.pointerY
   enforceConstraints()
   render()
 
