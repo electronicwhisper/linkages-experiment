@@ -92,6 +92,13 @@ drawPoint = (point, color = "#000") ->
   ctx.fillStyle = color
   ctx.fill()
 
+drawCircle = (center, radius, color = "#000") ->
+  ctx.beginPath()
+  ctx.arc(center.x, center.y, radius, 0, Math.PI*2)
+  ctx.lineWidth = 1
+  ctx.strokeStyle = color
+  ctx.stroke()
+
 drawLine = (p1, p2, color = "#000") ->
   ctx.beginPath()
   ctx.moveTo(p1.x, p1.y)
@@ -100,20 +107,17 @@ drawLine = (p1, p2, color = "#000") ->
   ctx.strokeStyle = color
   ctx.stroke()
 
-drawArc = (center, r, a1, a2, color = "#000") ->
-  ctx.beginPath()
-  ctx.arc(center.x, center.y, r, a1, a2)
-  ctx.lineWidth = 1
-  ctx.strokeStyle = color
-  ctx.stroke()
-
 render = ->
   clear()
+
   for point in model.points
+    color = "#000"
+    color = "#f00" if point == uistate.lastPoints[0]
+    color = "#a00" if point == uistate.lastPoints[1]
+    drawPoint(point, color)
     if point.fixed
-      drawPoint(point, "black")
-    else
-      drawPoint(point, "grey")
+      drawCircle(point, 5, color)
+
   for constraint in model.constraints
     if constraint instanceof DistanceConstraint
       drawLine(constraint.p1, constraint.p2, "blue")
@@ -189,7 +193,7 @@ key "a", ->
 
 key "f", ->
   p = uistate.lastPoints[0]
-  p.fixed = true
+  p.fixed = !p.fixed
 
 
 # =============================================================================

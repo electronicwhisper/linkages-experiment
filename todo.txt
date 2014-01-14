@@ -7,3 +7,8 @@ Model, rendering, and manipulation of 2D points with constraints
     # Equal distance between 2 pairs of points
 
 
+
+
+
+Point on line
+Point on circle (done)

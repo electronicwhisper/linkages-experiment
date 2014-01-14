@@ -11,7 +11,6 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  margin: 0;
   font-family: optima;
   font-size: 13px;
   color: #333;
@@ -26,10 +25,19 @@ canvas {
   left: 0px;
   bottom: 0px;
   right: 0px;
+  cursor: default;
 }
 </style>
 </head>
 <body>
+
+<div id="instructions">
+  Click to create points.<br>
+  Drag to move points.<br>
+  D to constrain distance between last two touched points.<br>
+  A to constrain angle between last two touched points.<br>
+  F to fix last touched point.<br>
+</div>
 
 <div id="main">
   <canvas id="c" touch-action="none"></canvas>
