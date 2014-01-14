@@ -32,12 +32,12 @@ class Point
   coordinates: ["x", "y"]
 
 class DistanceConstraint
-  constructor: (@p1, @p2, @quadrance) ->
+  constructor: (@p1, @p2, @distance) ->
   coordinates: ["p1", "p2"]
   points: -> [@p1, @p2]
   error: ->
-    q = math.quadrance(@p1, @p2)
-    e = Math.sqrt(q) - Math.sqrt(@quadrance)
+    d = math.distance(@p1, @p2)
+    e = d - @distance
     return e*e
 
 class AngleConstraint
@@ -52,6 +52,7 @@ class AngleConstraint
 
     q = math.quadrance(@p2, new Point(projectionx, projectiony))
     return q
+
 
 model = {
   points: []
@@ -166,9 +167,9 @@ key "d", ->
   p1 = uistate.lastPoints[0]
   p2 = uistate.lastPoints[1]
 
-  quadrance = math.quadrance(p1, p2)
+  distance = math.distance(p1, p2)
 
-  constraint = new DistanceConstraint(p1, p2, quadrance)
+  constraint = new DistanceConstraint(p1, p2, distance)
   model.constraints.push(constraint)
 
   render()
@@ -201,6 +202,9 @@ math.quadrance = (p1, p2) ->
   dx = p2.x - p1.x
   dy = p2.y - p1.y
   return dx*dx + dy*dy
+
+math.distance = (p1, p2) ->
+  return Math.sqrt(math.quadrance(p1, p2))
 
 math.angle = (p1, p2) ->
   dx = p2.x - p1.x

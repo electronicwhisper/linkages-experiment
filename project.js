@@ -41,10 +41,10 @@
   })();
 
   DistanceConstraint = (function() {
-    function DistanceConstraint(p1, p2, quadrance) {
+    function DistanceConstraint(p1, p2, distance) {
       this.p1 = p1;
       this.p2 = p2;
-      this.quadrance = quadrance;
+      this.distance = distance;
     }
 
     DistanceConstraint.prototype.coordinates = ["p1", "p2"];
@@ -54,9 +54,9 @@
     };
 
     DistanceConstraint.prototype.error = function() {
-      var e, q;
-      q = math.quadrance(this.p1, this.p2);
-      e = Math.sqrt(q) - Math.sqrt(this.quadrance);
+      var d, e;
+      d = math.distance(this.p1, this.p2);
+      e = d - this.distance;
       return e * e;
     };
 
@@ -220,11 +220,11 @@
   };
 
   key("d", function() {
-    var constraint, p1, p2, quadrance;
+    var constraint, distance, p1, p2;
     p1 = uistate.lastPoints[0];
     p2 = uistate.lastPoints[1];
-    quadrance = math.quadrance(p1, p2);
-    constraint = new DistanceConstraint(p1, p2, quadrance);
+    distance = math.distance(p1, p2);
+    constraint = new DistanceConstraint(p1, p2, distance);
     model.constraints.push(constraint);
     return render();
   });
@@ -252,6 +252,10 @@
     dx = p2.x - p1.x;
     dy = p2.y - p1.y;
     return dx * dx + dy * dy;
+  };
+
+  math.distance = function(p1, p2) {
+    return Math.sqrt(math.quadrance(p1, p2));
   };
 
   math.angle = function(p1, p2) {
