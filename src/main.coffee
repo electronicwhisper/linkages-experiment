@@ -16,8 +16,8 @@ init = ->
   canvasEl.addEventListener("pointerdown", pointerDown)
   canvasEl.addEventListener("pointermove", pointerMove)
   canvasEl.addEventListener("pointerup", pointerUp)
-  idleLoop()
   resize()
+  idleLoop()
 
 idleLoop = ->
   idle()
@@ -29,11 +29,9 @@ idleLoop = ->
 
 class Point
   constructor: (@x, @y) ->
-  coordinates: ["x", "y"]
 
 class DistanceConstraint
   constructor: (@p1, @p2, @distance) ->
-  coordinates: ["p1", "p2"]
   points: -> [@p1, @p2]
   error: ->
     d = math.distance(@p1, @p2)
@@ -43,16 +41,18 @@ class DistanceConstraint
 class AngleConstraint
   constructor: (@p1, @p2, @angle) ->
   points: -> [@p1, @p2]
+  # error: ->
+  #   dx = @p2.x - @p1.x
+  #   dy = @p2.y - @p1.y
+  #   cos = Math.cos(-@angle)
+  #   sin = Math.sin(-@angle)
+  #   rdy = sin*dx + cos*dy
+  #   return rdy*rdy
   error: ->
-    dx = @p2.x - @p1.x
-    dy = @p2.y - @p1.y
-
-    cos = Math.cos(-@angle)
-    sin = Math.sin(-@angle)
-
-    rdy = sin*dx + cos*dy
-
-    return rdy*rdy
+    angle = math.angle(@p1, @p2)
+    da = angle - @angle
+    e = math.distance(@p1, @p2) * Math.sin(da)
+    return e * e
 
 
 
@@ -131,7 +131,7 @@ render = ->
 
 findPointNear = (p) ->
   for point in model.points
-    if math.quadrance(p, point) < 100
+    if math.distance(p, point) < 10
       return point
   return undefined
 
@@ -167,31 +167,29 @@ idle = ->
   render()
 
 
-key "d", ->
+key "D", ->
   p1 = uistate.lastPoints[0]
   p2 = uistate.lastPoints[1]
 
   distance = math.distance(p1, p2)
-
   constraint = new DistanceConstraint(p1, p2, distance)
   model.constraints.push(constraint)
 
   render()
 
 
-key "a", ->
+key "A", ->
   p1 = uistate.lastPoints[0]
   p2 = uistate.lastPoints[1]
 
   angle = math.angle(p1, p2)
-
   constraint = new AngleConstraint(p1, p2, angle)
   model.constraints.push(constraint)
 
   render()
 
 
-key "f", ->
+key "F", ->
   p = uistate.lastPoints[0]
   p.fixed = !p.fixed
 
@@ -202,13 +200,10 @@ key "f", ->
 
 math = {}
 
-math.quadrance = (p1, p2) ->
+math.distance = (p1, p2) ->
   dx = p2.x - p1.x
   dy = p2.y - p1.y
-  return dx*dx + dy*dy
-
-math.distance = (p1, p2) ->
-  return Math.sqrt(math.quadrance(p1, p2))
+  return Math.sqrt(dx*dx + dy*dy)
 
 math.angle = (p1, p2) ->
   dx = p2.x - p1.x
@@ -223,21 +218,25 @@ math.normalize = (p) ->
 # Constraints
 # =============================================================================
 
-enforceConstraints = ->
-  epsilon = 1e-2
+window.config = config = {
+  epsilon: 1e-2
+  stepSize: 0.1
+  maxIterations: 600
+}
 
+enforceConstraints = ->
   fixedPoints = []
   for point in model.points
     if point.fixed
       fixedPoints.push(point)
 
-  for iteration in [0...100]
+  for iteration in [0...config.maxIterations]
 
     moves = []
 
     for constraint in model.constraints
       e = constraint.error()
-      if e > epsilon
+      if e > config.epsilon
         relevantPoints = constraint.points()
         relevantPoints = _.difference(relevantPoints, fixedPoints)
 
@@ -249,14 +248,14 @@ enforceConstraints = ->
         })
 
     if moves.length == 0
-      # console.log "solved", iteration
+      # All constraints solved.
       break
 
     for move in moves
       for point, i in move.points
         derivative = move.derivatives[i]
         d = math.normalize(derivative)
-        step = Math.sqrt(move.error) * 0.1
+        step = Math.sqrt(move.error) * config.stepSize
         point.x -= d.x * step
         point.y -= d.y * step
 
@@ -271,7 +270,7 @@ gradient = (constraint, points) ->
     derivative = new Point()
     derivatives.push(derivative)
 
-    for i in point.coordinates
+    for i in ["x", "y"]
       original = point[i]
       e1 = constraint.error()
       point[i] += delta

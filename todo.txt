@@ -12,3 +12,13 @@ Model, rendering, and manipulation of 2D points with constraints
 
 Point on line
 Point on circle (done)
+
+
+
+
+"Derived" points
+  midpoint
+  intersection
+  point on line (removes 1 degree)
+  point on circle (removes 1 degree)
+    should it control the radius of the circle?
