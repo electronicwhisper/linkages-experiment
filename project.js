@@ -83,7 +83,7 @@
       projectionx = this.p1.x + u * cos;
       projectiony = this.p1.y + u * sin;
       q = math.quadrance(this.p2, new Point(projectionx, projectiony));
-      return q * 4;
+      return q;
     };
 
     return AngleConstraint;
@@ -268,9 +268,8 @@
   };
 
   enforceConstraints = function() {
-    var constraint, d, derivative, derivatives, e, epsilon, fixedPoints, i, iteration, move, moves, point, relevantPoints, step, stepSize, _i, _j, _k, _len, _len1, _ref, _ref1, _results;
+    var constraint, d, derivative, derivatives, e, epsilon, fixedPoints, i, iteration, move, moves, point, relevantPoints, step, _i, _j, _k, _len, _len1, _ref, _ref1, _results;
     epsilon = 1e-2;
-    stepSize = 1;
     fixedPoints = [];
     _ref = model.points;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
@@ -313,7 +312,7 @@
               point = _ref2[i];
               derivative = move.derivatives[i];
               d = math.normalize(derivative);
-              step = Math.min(stepSize, Math.sqrt(move.error) * 0.1);
+              step = Math.sqrt(move.error) * 0.1;
               point.x -= d.x * step;
               _results2.push(point.y -= d.y * step);
             }

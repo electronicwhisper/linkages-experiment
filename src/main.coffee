@@ -51,7 +51,7 @@ class AngleConstraint
     projectiony = @p1.y + u*sin
 
     q = math.quadrance(@p2, new Point(projectionx, projectiony))
-    return q*4
+    return q
 
 model = {
   points: []
@@ -217,7 +217,6 @@ math.normalize = (p) ->
 
 enforceConstraints = ->
   epsilon = 1e-2
-  stepSize = 1
 
   fixedPoints = []
   for point in model.points
@@ -249,7 +248,7 @@ enforceConstraints = ->
       for point, i in move.points
         derivative = move.derivatives[i]
         d = math.normalize(derivative)
-        step = Math.min(stepSize, Math.sqrt(move.error)*0.1)
+        step = Math.sqrt(move.error) * 0.1
         point.x -= d.x * step
         point.y -= d.y * step
 
