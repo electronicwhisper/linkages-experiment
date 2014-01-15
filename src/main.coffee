@@ -33,7 +33,22 @@ class Point
 
 class DistanceConstraint
   constructor: (@p1, @p2, @distance) ->
-  points: -> [@p1, @p2]
+  pointNames: -> ["p1", "p2"]
+
+  solveFor: (pointName) ->
+    dx = @p2.x - @p1.x
+    dy = @p2.y - @p1.y
+    direction = math.normalize(new Point(dx, dy))
+
+    if pointName == "p1"
+      x = @p2.x - direction.x * @distance
+      y = @p2.y - direction.y * @distance
+    else if pointName == "p2"
+      x = @p1.x + direction.x * @distance
+      y = @p1.y + direction.y * @distance
+
+    return new Point(x, y)
+
   error: ->
     d = math.distance(@p1, @p2)
     e = d - @distance
@@ -41,7 +56,27 @@ class DistanceConstraint
 
 class AngleConstraint
   constructor: (@p1, @p2, @angle) ->
-  points: -> [@p1, @p2]
+  pointNames: -> ["p1", "p2"]
+
+  solveFor: (pointName) ->
+    dx = @p2.x - @p1.x
+    dy = @p2.y - @p1.y
+
+    cos = Math.cos(@angle)
+    sin = Math.sin(@angle)
+
+    parallelComponent = cos*dx + sin*dy
+
+    if pointName == "p1"
+      x = @p2.x - parallelComponent * cos
+      y = @p2.y - parallelComponent * sin
+    else if pointName == "p2"
+      x = @p1.x + parallelComponent * cos
+      y = @p1.y + parallelComponent * sin
+
+    return new Point(x, y)
+
+
   # error: ->
   #   dx = @p2.x - @p1.x
   #   dy = @p2.y - @p1.y
@@ -55,7 +90,7 @@ class AngleConstraint
     e = math.distance(@p1, @p2) * Math.sin(da)
     return e * e
 
-model = {
+window.model = model = {
   points: []
   constraints: []
 }
@@ -227,10 +262,6 @@ window.config = config = {
 }
 
 enforceConstraints = ->
-  fixedPoints = []
-  for point in model.points
-    if point.fixed
-      fixedPoints.push(point)
 
   for iteration in [0...config.maxIterations]
 
@@ -239,46 +270,26 @@ enforceConstraints = ->
     for constraint in model.constraints
       e = constraint.error()
       if e > config.epsilon
-        relevantPoints = constraint.points()
-        relevantPoints = _.difference(relevantPoints, fixedPoints)
 
-        derivatives = gradient(constraint, relevantPoints)
-        moves.push({
-          points: relevantPoints
-          derivatives: derivatives
-          error: e
-        })
+        pointNames = constraint.pointNames()
+        pointNames = _.reject pointNames, (pointName) ->
+          constraint[pointName].fixed
+
+        for pointName in pointNames
+          point = constraint[pointName]
+          solvedPoint = constraint.solveFor(pointName)
+          dx = solvedPoint.x - point.x
+          dy = solvedPoint.y - point.y
+          delta = new Point(dx, dy)
+          moves.push({point, delta})
 
     if moves.length == 0
       # All constraints solved.
       break
 
-    for move in moves
-      for point, i in move.points
-        derivative = move.derivatives[i]
-        d = math.normalize(derivative)
-        step = Math.sqrt(move.error) * config.stepSize
-        point.x -= d.x * step
-        point.y -= d.y * step
-
-gradient = (constraint, points) ->
-  delta = 1e-10
-
-  derivatives = []
-
-  for point in points
-    derivative = new Point()
-    derivatives.push(derivative)
-
-    for i in ["x", "y"]
-      original = point[i]
-      e1 = constraint.error()
-      point[i] += delta
-      e2 = constraint.error()
-      point[i] = original
-      derivative[i] = (e2 - e1) / delta
-
-  return derivatives
+    for {point, delta} in moves
+      point.x += delta.x * config.stepSize
+      point.y += delta.y * config.stepSize
 
 
 # =============================================================================
