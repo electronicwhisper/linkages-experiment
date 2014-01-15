@@ -90,7 +90,7 @@
 
   uistate = {
     movingPoint: null,
-    lastPoints: [],
+    lastTouchedPoints: [],
     pointerX: 0,
     pointerY: 0
   };
@@ -145,10 +145,10 @@
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       point = _ref[_i];
       color = "#000";
-      if (point === uistate.lastPoints[0]) {
+      if (point === uistate.lastTouchedPoints[0]) {
         color = "#f00";
       }
-      if (point === uistate.lastPoints[1]) {
+      if (point === uistate.lastTouchedPoints[1]) {
         color = "#a00";
       }
       drawPoint(point, color);
@@ -187,14 +187,13 @@
   pointerDown = function(e) {
     var foundPoint, p;
     p = new Point(e.clientX, e.clientY);
-    foundPoint = findPointNear(p);
-    if (!foundPoint) {
+    if (!(foundPoint = findPointNear(p))) {
       model.points.push(p);
       foundPoint = p;
     }
     uistate.movingPoint = foundPoint;
-    if (uistate.lastPoints[0] !== foundPoint) {
-      return uistate.lastPoints.unshift(foundPoint);
+    if (uistate.lastTouchedPoints[0] !== foundPoint) {
+      return uistate.lastTouchedPoints.unshift(foundPoint);
     }
   };
 
@@ -210,18 +209,26 @@
   };
 
   idle = function() {
-    if (uistate.movingPoint) {
-      uistate.movingPoint.x = uistate.pointerX;
-      uistate.movingPoint.y = uistate.pointerY;
+    var originalFixed, point;
+    if (point = uistate.movingPoint) {
+      point.x = uistate.pointerX;
+      point.y = uistate.pointerY;
+      originalFixed = point.fixed;
+      point.fixed = true;
+      enforceConstraints();
+      point.fixed = false;
+      enforceConstraints();
+      point.fixed = originalFixed;
+    } else {
+      enforceConstraints();
     }
-    enforceConstraints();
     return render();
   };
 
   key("D", function() {
     var constraint, distance, p1, p2;
-    p1 = uistate.lastPoints[0];
-    p2 = uistate.lastPoints[1];
+    p1 = uistate.lastTouchedPoints[0];
+    p2 = uistate.lastTouchedPoints[1];
     distance = math.distance(p1, p2);
     constraint = new DistanceConstraint(p1, p2, distance);
     model.constraints.push(constraint);
@@ -230,8 +237,8 @@
 
   key("A", function() {
     var angle, constraint, p1, p2;
-    p1 = uistate.lastPoints[0];
-    p2 = uistate.lastPoints[1];
+    p1 = uistate.lastTouchedPoints[0];
+    p2 = uistate.lastTouchedPoints[1];
     angle = math.angle(p1, p2);
     constraint = new AngleConstraint(p1, p2, angle);
     model.constraints.push(constraint);
@@ -240,7 +247,7 @@
 
   key("F", function() {
     var p;
-    p = uistate.lastPoints[0];
+    p = uistate.lastTouchedPoints[0];
     return p.fixed = !p.fixed;
   });
 
@@ -269,7 +276,7 @@
   window.config = config = {
     epsilon: 1e-2,
     stepSize: 0.1,
-    maxIterations: 600
+    maxIterations: 400
   };
 
   enforceConstraints = function() {

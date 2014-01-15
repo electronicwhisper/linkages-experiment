@@ -23,6 +23,7 @@ idleLoop = ->
   idle()
   requestAnimationFrame(idleLoop)
 
+
 # =============================================================================
 # Model
 # =============================================================================
@@ -54,8 +55,6 @@ class AngleConstraint
     e = math.distance(@p1, @p2) * Math.sin(da)
     return e * e
 
-
-
 model = {
   points: []
   constraints: []
@@ -68,7 +67,7 @@ model = {
 
 uistate = {
   movingPoint: null
-  lastPoints: []
+  lastTouchedPoints: []
   pointerX: 0
   pointerY: 0
 }
@@ -112,8 +111,8 @@ render = ->
 
   for point in model.points
     color = "#000"
-    color = "#f00" if point == uistate.lastPoints[0]
-    color = "#a00" if point == uistate.lastPoints[1]
+    color = "#f00" if point == uistate.lastTouchedPoints[0]
+    color = "#a00" if point == uistate.lastTouchedPoints[1]
     drawPoint(point, color)
     if point.fixed
       drawCircle(point, 5, color)
@@ -135,41 +134,45 @@ findPointNear = (p) ->
       return point
   return undefined
 
-
 pointerDown = (e) ->
   p = new Point(e.clientX, e.clientY)
 
-  foundPoint = findPointNear(p)
-  if !foundPoint
+  unless foundPoint = findPointNear(p)
     model.points.push(p)
     foundPoint = p
 
   uistate.movingPoint = foundPoint
-  if uistate.lastPoints[0] != foundPoint
-    uistate.lastPoints.unshift(foundPoint)
-
+  if uistate.lastTouchedPoints[0] != foundPoint
+    uistate.lastTouchedPoints.unshift(foundPoint)
 
 pointerMove = (e) ->
   uistate.pointerX = e.clientX
   uistate.pointerY = e.clientY
 
-
 pointerUp = (e) ->
   if uistate.movingPoint
     uistate.movingPoint = null
 
-
 idle = ->
-  if uistate.movingPoint
-    uistate.movingPoint.x = uistate.pointerX
-    uistate.movingPoint.y = uistate.pointerY
-  enforceConstraints()
+  if point = uistate.movingPoint
+    point.x = uistate.pointerX
+    point.y = uistate.pointerY
+
+    originalFixed = point.fixed
+    point.fixed = true
+    enforceConstraints()
+    point.fixed = false
+    enforceConstraints()
+    point.fixed = originalFixed
+
+  else
+    enforceConstraints()
+
   render()
 
-
 key "D", ->
-  p1 = uistate.lastPoints[0]
-  p2 = uistate.lastPoints[1]
+  p1 = uistate.lastTouchedPoints[0]
+  p2 = uistate.lastTouchedPoints[1]
 
   distance = math.distance(p1, p2)
   constraint = new DistanceConstraint(p1, p2, distance)
@@ -177,10 +180,9 @@ key "D", ->
 
   render()
 
-
 key "A", ->
-  p1 = uistate.lastPoints[0]
-  p2 = uistate.lastPoints[1]
+  p1 = uistate.lastTouchedPoints[0]
+  p2 = uistate.lastTouchedPoints[1]
 
   angle = math.angle(p1, p2)
   constraint = new AngleConstraint(p1, p2, angle)
@@ -188,9 +190,8 @@ key "A", ->
 
   render()
 
-
 key "F", ->
-  p = uistate.lastPoints[0]
+  p = uistate.lastTouchedPoints[0]
   p.fixed = !p.fixed
 
 
@@ -214,6 +215,7 @@ math.normalize = (p) ->
   d = Math.sqrt(p.x*p.x + p.y*p.y)
   return new Point(p.x / d, p.y / d)
 
+
 # =============================================================================
 # Constraints
 # =============================================================================
@@ -221,7 +223,7 @@ math.normalize = (p) ->
 window.config = config = {
   epsilon: 1e-2
   stepSize: 0.1
-  maxIterations: 600
+  maxIterations: 400
 }
 
 enforceConstraints = ->
@@ -259,8 +261,6 @@ enforceConstraints = ->
         point.x -= d.x * step
         point.y -= d.y * step
 
-
-
 gradient = (constraint, points) ->
   delta = 1e-10
 
@@ -281,6 +281,8 @@ gradient = (constraint, points) ->
   return derivatives
 
 
-
+# =============================================================================
+# Let's go!
+# =============================================================================
 
 init()
